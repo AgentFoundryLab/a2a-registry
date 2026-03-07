@@ -4,6 +4,7 @@ import asyncio
 import json
 import os
 from pathlib import Path
+from urllib.parse import quote
 
 import asyncpg
 
@@ -19,7 +20,7 @@ async def seed_database():
         db_name = os.environ.get("DB_NAME", "a2a_registry")
         db_user = os.environ.get("DB_USER", "postgres")
         db_password = os.environ.get("DB_PASSWORD", "postgres")
-        database_url = f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+        database_url = f"postgresql://{db_user}:{quote(db_password, safe='')}@{db_host}:{db_port}/{db_name}"
 
     conn = await asyncpg.connect(database_url)
 
