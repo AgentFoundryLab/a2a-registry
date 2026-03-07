@@ -148,6 +148,17 @@ frontend:
 # Admin dashboard (internal only — access via kubectl port-forward)
 admin:
   enabled: true
+  command:
+    - python
+    - run_admin.py
+  # Cost optimization: Use Spot pods
+  nodeSelector:
+    cloud.google.com/gke-spot: "true"
+  tolerations:
+    - key: cloud.google.com/gke-spot
+      operator: Equal
+      value: "true"
+      effect: NoSchedule
 
 # Database configuration (Cloud SQL)
 database:

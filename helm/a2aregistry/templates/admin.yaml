@@ -20,19 +20,20 @@ spec:
         component: admin
     spec:
       serviceAccountName: {{ .Values.serviceAccount.name }}
+      {{- with .Values.admin.nodeSelector }}
       nodeSelector:
-        cloud.google.com/gke-spot: "true"
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.admin.tolerations }}
       tolerations:
-      - key: cloud.google.com/gke-spot
-        operator: Equal
-        value: "true"
-        effect: NoSchedule
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
 
       containers:
       - name: admin
         image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}/{{ .Values.api.image.name }}:{{ .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
-        command: ["python", "run_admin.py"]
+        command: {{- toYaml .Values.admin.command | nindent 8 }}
         ports:
         - name: http
           containerPort: 8001

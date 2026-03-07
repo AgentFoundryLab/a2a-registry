@@ -1,5 +1,7 @@
 """Configuration management using pydantic-settings"""
 
+from urllib.parse import quote
+
 from pydantic import computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -30,7 +32,8 @@ class Settings(BaseSettings):
         if self.database_url_override:
             return self.database_url_override
         if self.db_password:
-            return f"postgresql://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
+            password = quote(self.db_password, safe="")
+            return f"postgresql://{self.db_user}:{password}@{self.db_host}:{self.db_port}/{self.db_name}"
         return f"postgresql://{self.db_user}@{self.db_host}:{self.db_port}/{self.db_name}"
     database_pool_min_size: int = 5
     database_pool_max_size: int = 20
