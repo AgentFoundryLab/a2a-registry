@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
+import { API_BASE_URL } from '../lib/api';
 
 const Terminal = ({ agent }) => {
     const [messages, setMessages] = useState([]);
@@ -43,7 +42,7 @@ const Terminal = ({ agent }) => {
         setMessages(prev => [...prev, { type: 'request', content: userMessage, timestamp: new Date() }]);
 
         try {
-            const res = await fetch(`${API_BASE}/agents/${agent.id}/chat`, {
+            const res = await fetch(`${API_BASE_URL}/agents/${agent.id}/chat`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ message: userMessage, context_id: contextId }),
