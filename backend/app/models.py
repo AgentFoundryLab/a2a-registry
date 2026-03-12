@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field, HttpUrl
 
 class Skill(BaseModel):
     """A2A Protocol Skill definition"""
+
     id: str
     name: str
     description: str
@@ -23,6 +24,7 @@ class Skill(BaseModel):
 
 class Capabilities(BaseModel):
     """A2A Protocol Capabilities"""
+
     streaming: bool = False
     pushNotifications: bool = Field(False, alias="pushNotifications")  # noqa: N815
     stateTransitionHistory: bool = Field(False, alias="stateTransitionHistory")  # noqa: N815
@@ -33,12 +35,14 @@ class Capabilities(BaseModel):
 
 class Provider(BaseModel):
     """Agent provider information"""
+
     organization: Optional[str] = None
     url: Optional[HttpUrl] = None
 
 
 class AgentBase(BaseModel):
     """Base agent model with A2A Protocol fields"""
+
     protocolVersion: str = Field(alias="protocolVersion")  # noqa: N815
     name: str
     description: str
@@ -50,7 +54,9 @@ class AgentBase(BaseModel):
     provider: Optional[Provider] = None
     documentationUrl: Optional[HttpUrl] = Field(None, alias="documentationUrl")  # noqa: N815
     iconUrl: Optional[HttpUrl] = Field(None, alias="iconUrl")  # noqa: N815
-    supportsAuthenticatedExtendedCard: Optional[bool] = Field(None, alias="supportsAuthenticatedExtendedCard")  # noqa: N815
+    supportsAuthenticatedExtendedCard: Optional[bool] = Field(  # noqa: N815
+        None, alias="supportsAuthenticatedExtendedCard"
+    )
     security: Optional[list[dict]] = None
     securitySchemes: Optional[dict] = Field(None, alias="securitySchemes")  # noqa: N815
 
@@ -74,11 +80,13 @@ class AgentBase(BaseModel):
 
 class AgentCreate(AgentBase):
     """Model for creating a new agent (POST /agents) - full payload"""
+
     pass
 
 
 class AgentRegister(BaseModel):
     """Simplified registration - just provide the wellKnownURI"""
+
     wellKnownURI: HttpUrl = Field(alias="wellKnownURI")  # noqa: N815
 
     # Optional overrides (if not in agent card)
@@ -89,6 +97,7 @@ class AgentRegister(BaseModel):
 
 class AgentInDB(AgentBase):
     """Agent model as stored in database (includes metadata)"""
+
     id: UUID
     created_at: datetime
     updated_at: datetime
@@ -98,6 +107,7 @@ class AgentInDB(AgentBase):
 
 class AgentPublic(AgentInDB):
     """Public agent model with computed health metrics"""
+
     uptime_percentage: Optional[float] = None
     avg_response_time_ms: Optional[int] = None
     last_health_check: Optional[datetime] = None
@@ -107,6 +117,7 @@ class AgentPublic(AgentInDB):
 
 class HealthCheck(BaseModel):
     """Health check record"""
+
     id: int
     agent_id: UUID
     checked_at: datetime
@@ -118,6 +129,7 @@ class HealthCheck(BaseModel):
 
 class HealthStatus(BaseModel):
     """Current health status for an agent"""
+
     agent_id: UUID
     is_healthy: bool
     uptime_percentage: float
@@ -129,6 +141,7 @@ class HealthStatus(BaseModel):
 
 class UptimeMetrics(BaseModel):
     """Historical uptime metrics for an agent"""
+
     agent_id: UUID
     period_days: int = 30
     uptime_percentage: float
@@ -142,6 +155,7 @@ class UptimeMetrics(BaseModel):
 
 class RegistryStats(BaseModel):
     """Registry-wide statistics"""
+
     total_agents: int
     healthy_agents: int
     health_percentage: float
@@ -162,6 +176,7 @@ class FlagReason(str, Enum):
 
 class AgentFlag(BaseModel):
     """Community flag/report"""
+
     agent_id: UUID
     reason: FlagReason = FlagReason.other
     details: Optional[str] = None
@@ -169,6 +184,7 @@ class AgentFlag(BaseModel):
 
 class AgentFlagInDB(AgentFlag):
     """Flag record in database"""
+
     id: int
     flagged_at: datetime
     ip_address: Optional[str] = None
@@ -177,6 +193,7 @@ class AgentFlagInDB(AgentFlag):
 
 class PaginatedAgents(BaseModel):
     """Paginated list of agents"""
+
     agents: list[AgentPublic]
     total: int
     limit: int

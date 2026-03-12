@@ -1,7 +1,7 @@
 # Multi-stage build for A2A Registry frontend
 
 # Stage 1: Build the application
-FROM node:20-alpine AS builder
+FROM node:20.19.0-alpine AS builder
 
 WORKDIR /app
 

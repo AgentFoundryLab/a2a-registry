@@ -63,9 +63,7 @@ async def verify_well_known_uri(agent_data: AgentCreate) -> Tuple[bool, str]:
                     local_val = getattr(agent_data, field)
                     remote_val = remote_agent.get(field)
                     if local_val != remote_val:
-                        mismatches.append(
-                            f"{field}: local='{local_val}' vs remote='{remote_val}'"
-                        )
+                        mismatches.append(f"{field}: local='{local_val}' vs remote='{remote_val}'")
 
                 if mismatches:
                     return (
@@ -118,7 +116,10 @@ async def fetch_agent_card(well_known_uri: str) -> Tuple[Optional[dict[str, Any]
                         parsed = _AgentCard.model_validate(normalised)
                         return parsed.model_dump(mode="json", by_alias=True), None
                     except _ValidationError as exc:
-                        errors = [f"{' -> '.join(str(p) for p in e['loc'])}: {e['msg']}" for e in exc.errors()]
+                        errors = [
+                            f"{' -> '.join(str(p) for p in e['loc'])}: {e['msg']}"
+                            for e in exc.errors()
+                        ]
                         return None, "Agent card validation failed: " + "; ".join(errors)
 
                 # SDK not available - fall back to manual validation

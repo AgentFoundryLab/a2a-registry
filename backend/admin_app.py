@@ -33,6 +33,7 @@ app = FastAPI(title="A2A Registry Admin", lifespan=lifespan)
 # Auth helpers
 # ---------------------------------------------------------------------------
 
+
 def _is_authenticated(request: Request) -> bool:
     token = request.cookies.get(_SESSION_COOKIE)
     return token is not None and token in _sessions
@@ -47,6 +48,7 @@ def _require_auth(request: Request) -> Optional[Response]:
 # ---------------------------------------------------------------------------
 # HTML helpers
 # ---------------------------------------------------------------------------
+
 
 def _page(title: str, body: str, breadcrumb: str = "") -> HTMLResponse:
     nav = """
@@ -93,6 +95,7 @@ def _page(title: str, body: str, breadcrumb: str = "") -> HTMLResponse:
 # Login / Logout
 # ---------------------------------------------------------------------------
 
+
 @app.get("/login", response_class=HTMLResponse)
 async def login_page(error: str = ""):
     err_html = "<p style='color:#e94560'>Invalid password.</p>" if error else ""
@@ -131,6 +134,7 @@ async def logout(request: Request):
 # Dashboard
 # ---------------------------------------------------------------------------
 
+
 @app.get("/", response_class=HTMLResponse)
 async def dashboard(request: Request):
     redir = _require_auth(request)
@@ -161,6 +165,7 @@ async def dashboard(request: Request):
 # ---------------------------------------------------------------------------
 # Flags
 # ---------------------------------------------------------------------------
+
 
 @app.get("/flags", response_class=HTMLResponse)
 async def list_flags(request: Request, msg: str = ""):
@@ -200,6 +205,7 @@ async def list_flags(request: Request, msg: str = ""):
 # ---------------------------------------------------------------------------
 # Agents
 # ---------------------------------------------------------------------------
+
 
 @app.get("/agents", response_class=HTMLResponse)
 async def list_agents_page(request: Request, search: str = "", msg: str = ""):
@@ -246,6 +252,7 @@ async def list_agents_page(request: Request, search: str = "", msg: str = ""):
 # ---------------------------------------------------------------------------
 # Actions
 # ---------------------------------------------------------------------------
+
 
 @app.post("/agents/{agent_id}/ban")
 async def ban_agent(agent_id: UUID, request: Request):

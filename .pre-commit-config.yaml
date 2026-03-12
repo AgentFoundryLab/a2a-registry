@@ -1,62 +1,37 @@
-# Pre-commit hooks for A2A Registry
-# For developers: Install with `uv run pre-commit install`
-
 repos:
-  # Python code formatting
-  - repo: https://github.com/psf/black
-    rev: 24.10.0
-    hooks:
-      - id: black
-        language_version: python3
-        args: [--line-length=100]
-
-  # Python linting and import sorting  
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.8.4
-    hooks:
-      - id: ruff
-        args: [--fix]
-      - id: ruff-format
-
-  # Type checking with ty
-  - repo: local
-    hooks:
-      - id: ty-check
-        name: Type check with ty
-        entry: uvx ty check
-        language: system
-        types: [python]
-        pass_filenames: false
-        always_run: true
-
-  # JSON validation
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
-    hooks:
-      - id: check-json
-        files: \.(json)$
-      - id: pretty-format-json
-        args: [--autofix, --indent=2]
-        files: \.(json)$
-
-  # General hooks
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
       - id: trailing-whitespace
+        files: ^(\.cloudbuild/.*\.ya?ml|\.github/workflows/.*\.ya?ml|\.pre-commit-config\.yaml|backend/.*\.py|docker-compose(\.prod)?\.yml|website/.*\.(css|cjs|html|js|json|jsx))$
       - id: end-of-file-fixer
+        files: ^(\.cloudbuild/.*\.ya?ml|\.github/workflows/.*\.ya?ml|\.pre-commit-config\.yaml|backend/.*\.py|docker-compose(\.prod)?\.yml|website/.*\.(css|cjs|html|js|json|jsx))$
       - id: check-yaml
-      - id: check-added-large-files
+        files: ^(\.cloudbuild/.*\.ya?ml|\.github/workflows/.*\.ya?ml|docker-compose(\.prod)?\.yml)$
+      - id: check-json
+        files: ^website/.*\.json$
+      - id: check-toml
+        files: ^backend/pyproject\.toml$
       - id: check-merge-conflict
+        files: ^(\.cloudbuild/.*\.ya?ml|\.github/workflows/.*\.ya?ml|\.pre-commit-config\.yaml|backend/.*\.py|docker-compose(\.prod)?\.yml|website/.*\.(css|cjs|html|js|json|jsx))$
       - id: check-case-conflict
+        files: ^(\.cloudbuild/.*\.ya?ml|\.github/workflows/.*\.ya?ml|\.pre-commit-config\.yaml|backend/.*\.py|docker-compose(\.prod)?\.yml|website/.*\.(css|cjs|html|js|json|jsx))$
+      - id: check-added-large-files
+        files: ^(\.cloudbuild/.*\.ya?ml|\.github/workflows/.*\.ya?ml|\.pre-commit-config\.yaml|backend/.*\.py|docker-compose(\.prod)?\.yml|website/.*\.(css|cjs|html|js|json|jsx))$
+      - id: detect-private-key
+        files: ^(\.cloudbuild/.*\.ya?ml|\.github/workflows/.*\.ya?ml|\.pre-commit-config\.yaml|backend/.*\.py|docker-compose(\.prod)?\.yml|website/.*\.(css|cjs|html|js|json|jsx))$
 
-  # Validate agents using our custom script
   - repo: local
     hooks:
-      - id: validate-agents
-        name: Validate agent JSON files
-        entry: uv run python scripts/validate_agent.py
+      - id: backend-ruff-check
+        name: Backend Ruff Check
+        entry: bash -lc 'cd backend && uv run ruff check .'
         language: system
-        files: ^agents/.*\.json$
-        pass_filenames: true
-
+        pass_filenames: false
+        files: ^backend/
+      - id: backend-ruff-format-check
+        name: Backend Ruff Format Check
+        entry: bash -lc 'cd backend && uv run ruff format --check .'
+        language: system
+        pass_filenames: false
+        files: ^backend/

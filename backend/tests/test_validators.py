@@ -6,6 +6,7 @@ from app.validators import validate_agent_card, validate_well_known_uri
 # validate_well_known_uri
 # ---------------------------------------------------------------------------
 
+
 def test_well_known_uri_requires_https():
     # http:// is allowed by the validator (it only requires absolute URL).
     # The validator does NOT require https specifically — it accepts http:// too.
@@ -57,6 +58,7 @@ def test_well_known_uri_rejects_relative():
 # ---------------------------------------------------------------------------
 # validate_agent_card
 # ---------------------------------------------------------------------------
+
 
 def test_validate_agent_card_requires_name():
     card = {"description": "x", "url": "https://example.com", "version": "1.0"}
@@ -153,7 +155,11 @@ def test_validate_agent_card_strict_mode_requires_extended_fields():
     # strict requires capabilities, defaultInputModes, defaultOutputModes, skills
     assert len(errors) > 0
     field_names = " ".join(errors).lower()
-    assert "capabilities" in field_names or "defaultinputmodes" in field_names or "skills" in field_names
+    assert (
+        "capabilities" in field_names
+        or "defaultinputmodes" in field_names
+        or "skills" in field_names
+    )
 
 
 def test_validate_agent_card_validates_skill_structure():

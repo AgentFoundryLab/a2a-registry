@@ -82,6 +82,7 @@ def _normalise_fields(card: dict[str, Any]) -> dict[str, Any]:
 # SDK-backed validation (primary path)
 # ---------------------------------------------------------------------------
 
+
 def _validate_with_sdk(card_data: dict[str, Any], strict: bool) -> list[str]:
     """Validate using AgentCard.model_validate() from a2a-sdk."""
     errors: list[str] = []
@@ -117,6 +118,7 @@ def _validate_with_sdk(card_data: dict[str, Any], strict: bool) -> list[str]:
 # Shared fine-grained checks used by both paths
 # ---------------------------------------------------------------------------
 
+
 def _check_non_empty_strings(card: dict[str, Any]) -> list[str]:
     errors: list[str] = []
     for field in ("name", "description"):
@@ -136,7 +138,9 @@ def _check_url_scheme(card: dict[str, Any]) -> list[str]:
         if not isinstance(val, str):
             errors.append(f"Field '{field}' must be a string.")
         elif not (val.startswith("http://") or val.startswith("https://")):
-            errors.append(f"Field '{field}' must be an absolute URL starting with http:// or https://.")
+            errors.append(
+                f"Field '{field}' must be an absolute URL starting with http:// or https://."
+            )
     return errors
 
 
@@ -160,12 +164,15 @@ def _validate_skills_extra(skills: Any) -> list[str]:
 # Manual validation fallback (used when a2a-sdk is not installed)
 # ---------------------------------------------------------------------------
 
+
 def _validate_manual(card_data: dict[str, Any], strict: bool) -> list[str]:  # pragma: no cover
     """Full manual validation - mirrors SDK requirements without importing it."""
     errors: list[str] = []
 
     core_required = frozenset(["name", "description", "url", "version"])
-    extended_required = frozenset(["capabilities", "defaultInputModes", "defaultOutputModes", "skills"])
+    extended_required = frozenset(
+        ["capabilities", "defaultInputModes", "defaultOutputModes", "skills"]
+    )
 
     required_fields = core_required | extended_required if strict else core_required
 
@@ -184,7 +191,10 @@ def _validate_manual(card_data: dict[str, Any], strict: bool) -> list[str]:  # p
         if not isinstance(card_data["capabilities"], dict):
             errors.append("Field 'capabilities' must be an object.")
 
-    for new_name, old_name in [("defaultInputModes", "inputModes"), ("defaultOutputModes", "outputModes")]:
+    for new_name, old_name in [
+        ("defaultInputModes", "inputModes"),
+        ("defaultOutputModes", "outputModes"),
+    ]:
         field = new_name if new_name in card_data else old_name if old_name in card_data else None
         if field:
             value = card_data[field]
@@ -249,6 +259,7 @@ def _validate_skills(skills: list[dict[str, Any]]) -> list[str]:
 # ---------------------------------------------------------------------------
 # Well-known URI validation (unchanged)
 # ---------------------------------------------------------------------------
+
 
 def validate_well_known_uri(uri: str) -> list[str]:
     """

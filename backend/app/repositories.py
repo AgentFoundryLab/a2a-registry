@@ -46,12 +46,12 @@ class AgentRepository:
             str(agent.wellKnownURI),
             str(agent.url),
             agent.version,
-            json.dumps(agent.provider.model_dump(mode='json') if agent.provider else None),
+            json.dumps(agent.provider.model_dump(mode="json") if agent.provider else None),
             str(agent.documentationUrl) if agent.documentationUrl else None,
-            json.dumps(agent.capabilities.model_dump(mode='json')),
+            json.dumps(agent.capabilities.model_dump(mode="json")),
             json.dumps(agent.defaultInputModes),
             json.dumps(agent.defaultOutputModes),
-            json.dumps([skill.model_dump(mode='json') for skill in agent.skills]),
+            json.dumps([skill.model_dump(mode="json") for skill in agent.skills]),
             agent.conformance,
             str(agent.iconUrl) if agent.iconUrl else None,
             agent.supportsAuthenticatedExtendedCard,
@@ -328,8 +328,12 @@ class AgentRepository:
             documentationUrl=row["documentation_url"],
             iconUrl=row.get("icon_url"),
             supportsAuthenticatedExtendedCard=row.get("supports_authenticated_extended_card"),
-            security=json.loads(row["security_requirements"]) if row.get("security_requirements") else [],
-            securitySchemes=json.loads(row["security_schemes"]) if row.get("security_schemes") else {},
+            security=json.loads(row["security_requirements"])
+            if row.get("security_requirements")
+            else [],
+            securitySchemes=json.loads(row["security_schemes"])
+            if row.get("security_schemes")
+            else {},
             capabilities=json.loads(row["capabilities"]),
             defaultInputModes=json.loads(row["default_input_modes"]),
             defaultOutputModes=json.loads(row["default_output_modes"]),
@@ -370,7 +374,7 @@ class HealthCheckRepository:
         response_time_ms: Optional[int],
         success: bool,
         error_message: Optional[str] = None,
-        source: str = 'worker',
+        source: str = "worker",
     ) -> HealthCheck:
         """Record a health check"""
         query = """
@@ -572,7 +576,9 @@ class StatsRepository:
             ORDER BY agent_count DESC
             LIMIT 10
         """)
-        trending_skills = [{"id": row["skill_id"], "count": row["agent_count"]} for row in trending_rows]
+        trending_skills = [
+            {"id": row["skill_id"], "count": row["agent_count"]} for row in trending_rows
+        ]
 
         return RegistryStats(
             total_agents=total_agents,
@@ -594,7 +600,11 @@ class FlagRepository:
         self.db = db
 
     async def create_flag(
-        self, agent_id: UUID, reason: Optional[str], ip_address: Optional[str], details: Optional[str] = None
+        self,
+        agent_id: UUID,
+        reason: Optional[str],
+        ip_address: Optional[str],
+        details: Optional[str] = None,
     ):
         """Record a community flag"""
         query = """

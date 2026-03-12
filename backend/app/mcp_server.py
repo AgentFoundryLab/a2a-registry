@@ -89,7 +89,12 @@ async def list_agents(
         limit=min(limit, 100),
         offset=offset,
     )
-    return {"agents": [_format_agent(a) for a in agents], "total": total, "limit": limit, "offset": offset}
+    return {
+        "agents": [_format_agent(a) for a in agents],
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+    }
 
 
 @mcp.tool
@@ -101,6 +106,7 @@ async def get_agent(agent_id: str) -> Optional[dict]:
         agent_id: The agent's UUID
     """
     from uuid import UUID
+
     try:
         uid = UUID(agent_id)
     except ValueError:
