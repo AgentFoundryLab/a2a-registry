@@ -5,16 +5,19 @@ import importlib
 
 def test_configure_logging_json():
     from app.logging_config import configure_logging
+
     configure_logging(json_logs=True)
 
 
 def test_configure_logging_console():
     from app.logging_config import configure_logging
+
     configure_logging(json_logs=False)
 
 
 def test_get_logger_returns_usable_logger():
     from app.logging_config import configure_logging, get_logger
+
     configure_logging(json_logs=False, log_level="WARNING")
     logger = get_logger("smoke")
     logger.info("smoke test log message")

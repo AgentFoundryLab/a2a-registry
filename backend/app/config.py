@@ -35,6 +35,7 @@ class Settings(BaseSettings):
             password = quote(self.db_password, safe="")
             return f"postgresql://{self.db_user}:{password}@{self.db_host}:{self.db_port}/{self.db_name}"
         return f"postgresql://{self.db_user}@{self.db_host}:{self.db_port}/{self.db_name}"
+
     database_pool_min_size: int = 5
     database_pool_max_size: int = 20
 

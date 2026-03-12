@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Activity } from 'lucide-react';
-
-const API_URL = import.meta.env.VITE_API_URL || 'https://a2aregistry.org/api';
+import { api } from '../lib/api';
 
 const LiveFeed = () => {
     const [agents, setAgents] = useState([]);
@@ -10,10 +9,7 @@ const LiveFeed = () => {
     useEffect(() => {
         const fetchRecentAgents = async () => {
             try {
-                const response = await fetch(
-                    `${API_URL}/agents?limit=10&offset=0`
-                );
-                const data = await response.json();
+                const data = await api.getAgents({ limit: 10, offset: 0 });
                 setAgents(data.agents || []);
                 setLoading(false);
             } catch (error) {

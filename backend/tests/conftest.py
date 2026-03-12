@@ -21,7 +21,7 @@ MOCK_AGENT_ROW = {
     "capabilities": '{"streaming": false, "pushNotifications": false, "stateTransitionHistory": false, "extendedAgentCard": false}',
     "default_input_modes": '["text/plain"]',
     "default_output_modes": '["text/plain"]',
-    "skills": '[]',
+    "skills": "[]",
     "conformance": None,
     "uptime_percentage": 100.0,
     "avg_response_time_ms": 50,
@@ -35,7 +35,11 @@ MOCK_AGENT_CARD = {
     "description": "A test agent for testing",
     "url": "https://example.com/a2a",
     "version": "1.0.0",
-    "capabilities": {"streaming": False, "pushNotifications": False, "stateTransitionHistory": False},
+    "capabilities": {
+        "streaming": False,
+        "pushNotifications": False,
+        "stateTransitionHistory": False,
+    },
     "defaultInputModes": ["text/plain"],
     "defaultOutputModes": ["text/plain"],
     "skills": [],
@@ -59,5 +63,6 @@ def client(mock_db):
     # Patch the db object that main.py imported at module load time
     with patch("app.main.db", mock_db):
         from app.main import app
+
         with TestClient(app, raise_server_exceptions=False) as c:
             yield c

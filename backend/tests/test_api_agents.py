@@ -152,9 +152,11 @@ def test_register_agent_rate_limit(client):
     original_limit = main_module.settings.rate_limit_submissions_per_hour
     main_module.settings.rate_limit_submissions_per_hour = 2
 
-    with patch("app.main.AgentRepository") as mock_repo, \
-         patch("app.main.fetch_agent_card") as mock_fetch, \
-         patch("app.main.validate_well_known_uri", return_value=[]):
+    with (
+        patch("app.main.AgentRepository") as mock_repo,
+        patch("app.main.fetch_agent_card") as mock_fetch,
+        patch("app.main.validate_well_known_uri", return_value=[]),
+    ):
         instance = mock_repo.return_value
         instance.get_by_well_known_uri = AsyncMock(return_value=None)
         mock_fetch.return_value = (None, "connection refused")
@@ -178,8 +180,10 @@ def test_flag_agent_not_found(client):
     """POST /agents/{nonexistent_uuid}/flag with a well-formed UUID that doesn't exist."""
     nonexistent = "00000000-0000-0000-0000-000000000001"
 
-    with patch("app.main.FlagRepository") as mock_flag_repo, \
-         patch("app.main.AgentRepository") as mock_agent_repo:
+    with (
+        patch("app.main.FlagRepository") as mock_flag_repo,
+        patch("app.main.AgentRepository") as mock_agent_repo,
+    ):
         flag_instance = mock_flag_repo.return_value
         flag_instance.create_flag = AsyncMock(return_value=None)
         agent_instance = mock_agent_repo.return_value

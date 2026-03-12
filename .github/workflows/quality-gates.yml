@@ -1,0 +1,70 @@
+name: Quality Gates
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main, "release/**", "poc/**", "feature/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backend-quality:
+    name: Backend Quality
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          working-directory: backend
+
+      - name: Sync backend dependencies
+        run: uv sync --extra dev --frozen
+
+      - name: Lint backend
+        run: uv run ruff check .
+
+      - name: Check backend formatting
+        run: uv run ruff format --check .
+
+      - name: Run backend tests
+        run: uv run --extra dev pytest tests/ -v
+
+  frontend-quality:
+    name: Frontend Quality
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: website
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.19.0"
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Audit frontend dependencies
+        run: npm audit --audit-level=high
+
+      - name: Build frontend
+        run: npm run build

@@ -20,7 +20,9 @@ async def seed_database():
         db_name = os.environ.get("DB_NAME", "a2a_registry")
         db_user = os.environ.get("DB_USER", "postgres")
         db_password = os.environ.get("DB_PASSWORD", "postgres")
-        database_url = f"postgresql://{db_user}:{quote(db_password, safe='')}@{db_host}:{db_port}/{db_name}"
+        database_url = (
+            f"postgresql://{db_user}:{quote(db_password, safe='')}@{db_host}:{db_port}/{db_name}"
+        )
 
     conn = await asyncpg.connect(database_url)
 
@@ -62,11 +64,14 @@ async def seed_database():
                 provider = agent.get("provider")
                 documentation_url = agent.get("documentationUrl")
 
-                capabilities = agent.get("capabilities", {
-                    "streaming": False,
-                    "pushNotifications": False,
-                    "stateTransitionHistory": False
-                })
+                capabilities = agent.get(
+                    "capabilities",
+                    {
+                        "streaming": False,
+                        "pushNotifications": False,
+                        "stateTransitionHistory": False,
+                    },
+                )
 
                 default_input_modes = agent.get("defaultInputModes", ["text/plain"])
                 default_output_modes = agent.get("defaultOutputModes", ["text/plain"])
@@ -76,7 +81,8 @@ async def seed_database():
                 conformance = agent.get("conformance")
 
                 # Insert into database
-                await conn.execute("""
+                await conn.execute(
+                    """
                     INSERT INTO agents (
                         protocol_version, name, description, author, well_known_uri,
                         url, version, provider, documentation_url, capabilities,
@@ -116,7 +122,9 @@ async def seed_database():
 
         # Show summary
         total = await conn.fetchval("SELECT COUNT(*) FROM agents")
-        standard = await conn.fetchval("SELECT COUNT(*) FROM agents WHERE conformance IS NULL OR conformance = true")
+        standard = await conn.fetchval(
+            "SELECT COUNT(*) FROM agents WHERE conformance IS NULL OR conformance = true"
+        )
         non_standard = await conn.fetchval("SELECT COUNT(*) FROM agents WHERE conformance = false")
 
         print("\nDatabase summary:")

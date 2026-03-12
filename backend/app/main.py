@@ -39,6 +39,7 @@ from .validators import validate_well_known_uri
 def _make_mcp_app():
     return mcp.http_app(path="/", stateless_http=True)
 
+
 # Simple in-memory rate limiter: {ip: [timestamps]}
 _submission_timestamps: dict[str, list[float]] = defaultdict(list)
 _RATE_WINDOW = 3600  # 1 hour
@@ -169,13 +170,17 @@ async def register_agent_simple(registration: AgentRegister, request: Request):
             protocolVersion=agent_card.get("protocolVersion", "0.3.0"),
             name=agent_card["name"],
             description=agent_card["description"],
-            author=registration.author or agent_card.get("provider", {}).get("organization", "Unknown"),
+            author=registration.author
+            or agent_card.get("provider", {}).get("organization", "Unknown"),
             wellKnownURI=well_known_uri,
             url=agent_card["url"],
             version=agent_card["version"],
             provider=agent_card.get("provider"),
             documentationUrl=agent_card.get("documentationUrl"),
-            capabilities=agent_card.get("capabilities", {"streaming": False, "pushNotifications": False, "stateTransitionHistory": False}),
+            capabilities=agent_card.get(
+                "capabilities",
+                {"streaming": False, "pushNotifications": False, "stateTransitionHistory": False},
+            ),
             defaultInputModes=agent_card.get("defaultInputModes", ["text/plain"]),
             defaultOutputModes=agent_card.get("defaultOutputModes", ["text/plain"]),
             skills=agent_card.get("skills", []),
@@ -343,7 +348,10 @@ async def update_agent(agent_id: UUID, request: Request):
             version=agent_card["version"],
             provider=agent_card.get("provider"),
             documentationUrl=agent_card.get("documentationUrl"),
-            capabilities=agent_card.get("capabilities", {"streaming": False, "pushNotifications": False, "stateTransitionHistory": False}),
+            capabilities=agent_card.get(
+                "capabilities",
+                {"streaming": False, "pushNotifications": False, "stateTransitionHistory": False},
+            ),
             defaultInputModes=agent_card.get("defaultInputModes", ["text/plain"]),
             defaultOutputModes=agent_card.get("defaultOutputModes", ["text/plain"]),
             skills=agent_card.get("skills", []),
@@ -474,6 +482,7 @@ class ChatRequest(BaseModel):
 def _is_private_url(url: str) -> bool:
     """Return True if the URL resolves to a private/internal address (SSRF guard)."""
     import ipaddress
+
     try:
         host = urlparse(url).hostname or ""
         addr = ipaddress.ip_address(host)
@@ -489,9 +498,7 @@ def _extract_text(result) -> str:
     if isinstance(result, tuple):
         result = result[0]
     if isinstance(result, Message):
-        return "".join(
-            p.root.text for p in result.parts if isinstance(p.root, TextPart)
-        )
+        return "".join(p.root.text for p in result.parts if isinstance(p.root, TextPart))
     if isinstance(result, Task):
         # Check artifacts first
         if result.artifacts:
@@ -514,9 +521,7 @@ def _extract_text(result) -> str:
         if result.history:
             for msg in reversed(result.history):
                 if msg.role == Role.agent:
-                    text = "".join(
-                        p.root.text for p in msg.parts if isinstance(p.root, TextPart)
-                    )
+                    text = "".join(p.root.text for p in msg.parts if isinstance(p.root, TextPart))
                     if text:
                         return text
         return f"Task {result.status.state.value}"
@@ -568,7 +573,9 @@ async def chat_with_agent(agent_id: UUID, body: ChatRequest):
     except (httpx.TimeoutException, httpx.HTTPStatusError, httpx.RequestError, Exception) as exc:
         elapsed_ms = int((time.monotonic() - start) * 1000)
         if isinstance(exc, httpx.TimeoutException):
-            await health_repo.create(agent_id, 504, elapsed_ms, False, "Agent request timed out", source='chat')
+            await health_repo.create(
+                agent_id, 504, elapsed_ms, False, "Agent request timed out", source="chat"
+            )
             raise HTTPException(status_code=504, detail="Agent request timed out")
         if isinstance(exc, httpx.HTTPStatusError):
             code = exc.response.status_code
@@ -577,13 +584,17 @@ async def chat_with_agent(agent_id: UUID, body: ChatRequest):
             except ValueError:
                 phrase = "Unknown"
             error_msg = f"Agent returned {code} {phrase}"
-            await health_repo.create(agent_id, code, elapsed_ms, False, error_msg, source='chat')
+            await health_repo.create(agent_id, code, elapsed_ms, False, error_msg, source="chat")
             raise HTTPException(status_code=code, detail=error_msg)
         if isinstance(exc, httpx.RequestError):
-            await health_repo.create(agent_id, 502, elapsed_ms, False, "Agent unreachable", source='chat')
+            await health_repo.create(
+                agent_id, 502, elapsed_ms, False, "Agent unreachable", source="chat"
+            )
             raise HTTPException(status_code=502, detail=f"Agent unreachable: {exc}")
         logger.exception("chat_proxy_error", agent_id=str(agent_id))
-        await health_repo.create(agent_id, 502, elapsed_ms, False, "Agent returned an unexpected error", source='chat')
+        await health_repo.create(
+            agent_id, 502, elapsed_ms, False, "Agent returned an unexpected error", source="chat"
+        )
         raise HTTPException(status_code=502, detail="Agent returned an unexpected error")
 
     return {"response": response_text, "context_id": context_id}
@@ -600,7 +611,9 @@ def _require_admin(x_admin_key: Optional[str]):
 
 
 @router.get("/admin/flags")
-async def list_flags(x_admin_key: Optional[str] = Header(default=None), limit: int = 100, offset: int = 0):
+async def list_flags(
+    x_admin_key: Optional[str] = Header(default=None), limit: int = 100, offset: int = 0
+):
     """List all agent flags (admin only)"""
     _require_admin(x_admin_key)
     flag_repo = FlagRepository(db)

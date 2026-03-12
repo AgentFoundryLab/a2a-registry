@@ -1,0 +1,32 @@
+name: Pre-commit Checks
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main, "release/**", "poc/**", "feature/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pre-commit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          working-directory: backend
+
+      - name: Prime backend environment
+        working-directory: backend
+        run: uv sync --extra dev --frozen
+
+      - name: Run pre-commit on all files
+        run: uvx pre-commit run --all-files

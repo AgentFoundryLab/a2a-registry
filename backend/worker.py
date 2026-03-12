@@ -84,13 +84,15 @@ async def check_agent_health(
                         errors = validate_agent_card(card_data, strict=True)
                         conformance = len(errors) == 0
                         await agent_repo.update_conformance(agent_id, conformance)
-                        bound_logger.debug("conformance_updated", conformance=conformance, errors=errors[:3] if errors else [])
+                        bound_logger.debug(
+                            "conformance_updated",
+                            conformance=conformance,
+                            errors=errors[:3] if errors else [],
+                        )
                     except Exception as conf_err:
                         bound_logger.warning("conformance_check_failed", error=str(conf_err))
             else:
-                bound_logger.warning(
-                    "health_check_degraded", status_code=status_code
-                )
+                bound_logger.warning("health_check_degraded", status_code=status_code)
 
     except asyncio.TimeoutError:
         response_time_ms = int((time.time() - start_time) * 1000)
@@ -189,7 +191,11 @@ async def health_check_cycle():
 async def health_check_worker():
     """Main worker loop - runs health checks at configured interval"""
     logger.info("worker_starting")
-    logger.info("worker_config", check_interval=settings.health_check_interval_seconds, timeout=settings.health_check_timeout_seconds)
+    logger.info(
+        "worker_config",
+        check_interval=settings.health_check_interval_seconds,
+        timeout=settings.health_check_timeout_seconds,
+    )
 
     # Connect to database
     await db.connect()

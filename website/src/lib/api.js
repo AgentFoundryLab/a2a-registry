@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://www.a2aregistry.org/api';
+export const API_BASE_URL = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '');
 
 class ApiError extends Error {
   constructor(message, status, data) {
@@ -11,7 +11,6 @@ class ApiError extends Error {
 
 async function fetchAPI(endpoint, options = {}) {
   const url = `${API_BASE_URL}${endpoint}`;
-
   const response = await fetch(url, {
     ...options,
     headers: {
