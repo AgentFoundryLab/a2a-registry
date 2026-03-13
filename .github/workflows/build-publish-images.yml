@@ -1,0 +1,156 @@
+name: Build and Publish A2A Images
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - "website/**"
+      - ".cloudbuild/**"
+      - "helm/**"
+      - ".github/workflows/build-publish-images.yml"
+  push:
+    branches:
+      - main
+      - "release/**"
+    paths:
+      - "backend/**"
+      - "website/**"
+      - ".cloudbuild/**"
+      - "helm/**"
+      - ".github/workflows/build-publish-images.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: build-publish-images-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+  IMAGE_TAG: ${{ github.event.pull_request.head.sha || github.sha }}
+  A2A_IMAGE_PLATFORM: linux/amd64
+  A2A_FRONTEND_API_URL: ${{ vars.A2A_FRONTEND_API_URL }}
+  A2A_FRONTEND_POSTHOG_HOST: ${{ vars.A2A_FRONTEND_POSTHOG_HOST || 'https://us.posthog.com' }}
+  A2A_FRONTEND_POSTHOG_KEY: ${{ secrets.VITE_POSTHOG_KEY }}
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          working-directory: backend
+
+      - name: Sync backend dependencies
+        run: uv sync --extra dev --frozen
+
+      - name: Run backend tests
+        run: uv run --extra dev pytest tests/ -v
+
+  validate-publish-config:
+    name: Validate publish configuration
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name != 'pull_request'
+    steps:
+      - name: Validate required CI/CD configuration
+        env:
+          GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          GCP_SERVICE_ACCOUNT_EMAIL: ${{ secrets.GCP_SERVICE_ACCOUNT_EMAIL }}
+        run: |
+          set -euo pipefail
+          : "${GCP_PROJECT_ID:?Set repository variable GCP_PROJECT_ID}"
+          : "${GCP_WORKLOAD_IDENTITY_PROVIDER:?Set repository secret GCP_WORKLOAD_IDENTITY_PROVIDER}"
+          : "${GCP_SERVICE_ACCOUNT_EMAIL:?Set repository secret GCP_SERVICE_ACCOUNT_EMAIL}"
+          echo "Required publish configuration is present."
+          echo "Provision repo secrets/variables via scripts/install/platform/08-provision-github-wif.sh using PLATFORM_GH_TOKEN."
+
+  verify-image-build:
+    name: Verify image build
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Validate required CI/CD configuration
+        env:
+          GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          GCP_SERVICE_ACCOUNT_EMAIL: ${{ secrets.GCP_SERVICE_ACCOUNT_EMAIL }}
+        run: |
+          set -euo pipefail
+          : "${GCP_PROJECT_ID:?Set repository variable GCP_PROJECT_ID}"
+          : "${GCP_WORKLOAD_IDENTITY_PROVIDER:?Set repository secret GCP_WORKLOAD_IDENTITY_PROVIDER}"
+          : "${GCP_SERVICE_ACCOUNT_EMAIL:?Set repository secret GCP_SERVICE_ACCOUNT_EMAIL}"
+
+      - name: Authenticate to Google Cloud via Workload Identity Federation
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT_EMAIL }}
+
+      - name: Setup gcloud SDK
+        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: Submit Cloud Build verification
+        run: |
+          gcloud builds submit . \
+            --project "${GCP_PROJECT_ID}" \
+            --config ".cloudbuild/a2a-images-verify.yaml" \
+            --timeout "10m" \
+            --substitutions "_A2A_API_IMAGE=gcr.io/${GCP_PROJECT_ID}/a2a-registry-api:${IMAGE_TAG},_A2A_WORKER_IMAGE=gcr.io/${GCP_PROJECT_ID}/a2a-registry-worker:${IMAGE_TAG},_A2A_FRONTEND_IMAGE=gcr.io/${GCP_PROJECT_ID}/a2a-registry-frontend:${IMAGE_TAG},_A2A_IMAGE_PLATFORM=${A2A_IMAGE_PLATFORM},_A2A_FRONTEND_API_URL=${A2A_FRONTEND_API_URL},_A2A_FRONTEND_POSTHOG_HOST=${A2A_FRONTEND_POSTHOG_HOST},_A2A_FRONTEND_POSTHOG_KEY=${A2A_FRONTEND_POSTHOG_KEY}"
+
+  publish-images:
+    name: Publish images
+    runs-on: ubuntu-latest
+    needs: [test, validate-publish-config]
+    if: github.event_name != 'pull_request'
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Authenticate to Google Cloud via Workload Identity Federation
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT_EMAIL }}
+
+      - name: Setup gcloud SDK
+        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: Submit Cloud Build publish
+        run: |
+          gcloud builds submit . \
+            --project "${GCP_PROJECT_ID}" \
+            --config ".cloudbuild/a2a-images.yaml" \
+            --timeout "10m" \
+            --substitutions "_A2A_API_IMAGE=gcr.io/${GCP_PROJECT_ID}/a2a-registry-api:${IMAGE_TAG},_A2A_WORKER_IMAGE=gcr.io/${GCP_PROJECT_ID}/a2a-registry-worker:${IMAGE_TAG},_A2A_FRONTEND_IMAGE=gcr.io/${GCP_PROJECT_ID}/a2a-registry-frontend:${IMAGE_TAG},_A2A_IMAGE_PLATFORM=${A2A_IMAGE_PLATFORM},_A2A_FRONTEND_API_URL=${A2A_FRONTEND_API_URL},_A2A_FRONTEND_POSTHOG_HOST=${A2A_FRONTEND_POSTHOG_HOST},_A2A_FRONTEND_POSTHOG_KEY=${A2A_FRONTEND_POSTHOG_KEY}"
+
+      - name: Tag latest images
+        run: |
+          gcloud artifacts docker tags add "gcr.io/${GCP_PROJECT_ID}/a2a-registry-api:${IMAGE_TAG}" "gcr.io/${GCP_PROJECT_ID}/a2a-registry-api:latest" --quiet
+          gcloud artifacts docker tags add "gcr.io/${GCP_PROJECT_ID}/a2a-registry-worker:${IMAGE_TAG}" "gcr.io/${GCP_PROJECT_ID}/a2a-registry-worker:latest" --quiet
+          gcloud artifacts docker tags add "gcr.io/${GCP_PROJECT_ID}/a2a-registry-frontend:${IMAGE_TAG}" "gcr.io/${GCP_PROJECT_ID}/a2a-registry-frontend:latest" --quiet

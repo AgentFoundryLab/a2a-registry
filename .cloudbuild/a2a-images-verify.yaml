@@ -1,0 +1,44 @@
+steps:
+  - name: gcr.io/cloud-builders/docker
+    id: build-api
+    env:
+      - DOCKER_BUILDKIT=1
+    args:
+      - build
+      - --platform
+      - ${_A2A_IMAGE_PLATFORM}
+      - -f
+      - /workspace/backend/Dockerfile
+      - -t
+      - ${_A2A_API_IMAGE}
+      - /workspace/backend
+
+  - name: gcr.io/cloud-builders/docker
+    id: tag-worker
+    args:
+      - tag
+      - ${_A2A_API_IMAGE}
+      - ${_A2A_WORKER_IMAGE}
+
+  - name: gcr.io/cloud-builders/docker
+    id: build-frontend
+    env:
+      - DOCKER_BUILDKIT=1
+    args:
+      - build
+      - --platform
+      - ${_A2A_IMAGE_PLATFORM}
+      - -f
+      - /workspace/website/Dockerfile
+      - -t
+      - ${_A2A_FRONTEND_IMAGE}
+      - --build-arg
+      - VITE_API_URL=${_A2A_FRONTEND_API_URL}
+      - --build-arg
+      - VITE_POSTHOG_HOST=${_A2A_FRONTEND_POSTHOG_HOST}
+      - --build-arg
+      - VITE_POSTHOG_KEY=${_A2A_FRONTEND_POSTHOG_KEY}
+      - /workspace/website
+
+options:
+  logging: CLOUD_LOGGING_ONLY
