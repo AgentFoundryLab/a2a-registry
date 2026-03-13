@@ -21,7 +21,7 @@ client-python/    # Python SDK (a2a-registry-client on PyPI)
 hello-world-agent/ # Example A2A agent deployed on Cloudflare Workers
 helm/a2aregistry/ # Kubernetes Helm chart
 .github/workflows/
-  deploy-backend.yml        # test → build → deploy pipeline (main branch)
+  build-publish-images.yml  # test → PR build verification → main/release image publish
   deploy-hello-world-agent.yml  # deploys hello-world-agent to Cloudflare Workers
   publish.yml               # PyPI client publish
 ```
@@ -67,11 +67,16 @@ uv build
 
 ## CI/CD
 
-`deploy-backend.yml` runs on push to `main` when `backend/`, `website/`, or `helm/` changes:
-1. **Test** — `uv run --extra dev pytest tests/ -v` (uses `astral-sh/setup-uv@v7`)
-2. **Build & Push** — Docker images to GCR (api, worker, frontend)
-3. **Deploy** — Helm upgrade on GKE cluster `clusterkit` in `us-central1`
-4. **Purge** — Cloudflare cache purge after deploy
+`build-publish-images.yml` runs in two modes when `backend/`, `website/`, `helm/`, or `.cloudbuild/` changes:
+1. **PR updates** — run backend tests, then verify image builds in Cloud Build without pushing.
+2. **Push to `main`/`release/**`** — validate required config, then build and publish images (api, worker, frontend) via Cloud Build.
+
+Required publish config:
+- Variable: `GCP_PROJECT_ID`
+- Secret: `GCP_WORKLOAD_IDENTITY_PROVIDER`
+- Secret: `GCP_SERVICE_ACCOUNT_EMAIL`
+
+Provision these using the platform automation path in `agentic-mesh/scripts/install/platform/08-provision-github-wif.sh` with `PLATFORM_GH_TOKEN`.
 
 ## Deployment
 
