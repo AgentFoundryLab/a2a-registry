@@ -16,7 +16,7 @@ api:
   resources:
     requests:
       cpu: 50m
-      memory: 96Mi
+      memory: 128Mi
     limits:
       cpu: 500m
       memory: 256Mi
@@ -31,17 +31,17 @@ frontend:
   resources:
     requests:
       cpu: 20m
-      memory: 32Mi
+      memory: 8Mi
     limits:
       cpu: 100m
-      memory: 64Mi
+      memory: 16Mi
 
 # Enable PostHog for production
 posthog:
   enabled: true
 
 helloWorld:
-  enabled: true
+  enabled: false
 
 # Production configuration
 config:
